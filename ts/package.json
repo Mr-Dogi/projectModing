@@ -1,0 +1,32 @@
+{
+  "name": "ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "ts-node src/app.ts",
+    "test": "ts-mocha src/test/*.spec.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/mocha": "^10.0.9",
+    "@types/mysql": "^2.15.26",
+    "@types/node": "^22.9.0",
+    "mocha": "^10.8.2",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "dayjs": "^1.11.13",
+    "express": "^4.21.1",
+    "mysql": "^2.18.1",
+    "reflect-metadata": "^0.2.2",
+    "tsyringe": "^4.8.0"
+  }
+}
