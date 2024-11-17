@@ -27,7 +27,7 @@ const config: DatabaseConfig = {
     database: "OTA"
 };
 
-
+// 데이터 베이스에 대한 처리를 당당한다.
 class Mysql implements Repository {
     pool: Pool;
 
