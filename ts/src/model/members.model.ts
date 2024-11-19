@@ -1,4 +1,5 @@
 import { IsDate, IsEmail, IsString, IsEnum, IsOptional, IsNumber, MinLength, MaxLength, Matches } from 'class-validator';
+import { Board, BoardLike } from '@model/boards.model';
 
 // 멤버 상태 enum
 export enum MemberStatus {
@@ -123,4 +124,18 @@ export class MemberError extends Error {
         super(message);
         this.name = 'MemberError';
     }
+}
+
+export const toMember = (row: any) : Member => {
+    const member = new Member({
+        id: row.id,
+        email: row.email,
+        nickname: row.nickname,
+        password: row.password,
+        status: row.status,
+        role: row.role,
+        last_login_at: new Date(row.last_login_at), // 선택적 필드
+    })
+
+    return member
 }

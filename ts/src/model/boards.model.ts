@@ -1,4 +1,5 @@
 import { IsDate, IsNumber, IsString, IsBoolean, IsOptional } from 'class-validator';
+import { Member } from '@model/members.model';
 
 // 공통 타임스탬프 베이스 모델
 export abstract class TimeStampModel {
@@ -162,4 +163,37 @@ export class Comment extends TimeStampModel {
         super();
         Object.assign(this, partial);
     }
+}
+
+
+export const toBoard = (row: any): Board => {
+    const board = new Board({
+        id : row.id,
+        member_id : row.member_id,
+        title : row.title,
+        content : row.content,
+        status : row.status,
+        is_public : row.is_public,
+        view_count : row.view_count,
+        like_count : row.like_count,
+        comment_count : row.comment_count
+    })
+    return board
+}
+
+export const toBoardCategoryes = (row : any): BoardCategory => {
+    const boardCategories = new BoardCategory({
+        board_id : row.board_id,
+        category_id : row.category_id
+    })
+    return boardCategories
+}
+
+export const toBoardLike = (row : any): BoardLike => {
+    const boardLike = new BoardLike({
+        board_id : row.board_id,
+        member_id : row.member_id,
+        created_at : new Date(row.created_at)
+    })
+    return boardLike
 }
