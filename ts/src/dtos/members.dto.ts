@@ -7,8 +7,8 @@ import {
   Matches,
   ValidateNested
 } from 'class-validator';
-import { member } from '@model/members.model'
-import { boards } from '@model/boards.model'
+import { Member } from '@model/members.model'
+import { Board } from '@model/boards.model'
 
 // 게시글 정보 인터페이스를 클래스로 변경
 export class BoardBriefDto {
@@ -92,7 +92,7 @@ export class MemberResponseDto extends CommonResponseDto<BaseMemberDto> {
   @Type(() => BaseMemberDto)
   declare data: BaseMemberDto;
 
-  static fromModel(member: member): MemberResponseDto {
+  static fromModel(member: Member): MemberResponseDto {
     return {
       success: true,
       data: {
@@ -122,7 +122,7 @@ export class MemberDetailResponseDto extends CommonResponseDto<MemberDetailDto> 
   @Type(() => MemberDetailDto)
   declare data: MemberDetailDto;
 
-  static fromModel(member: member, boards: boards[]): MemberDetailResponseDto {
+  static fromModel(member: Member, boards: Board[]): MemberDetailResponseDto {
     return {
       success: true,
       data: {
