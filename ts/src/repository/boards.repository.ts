@@ -1,3 +1,4 @@
+import { SearchBoardDto } from '@/dtos/borads.dto';
 import { Board, 
     BoardCategory, 
     BoardLike,
@@ -6,8 +7,9 @@ import { Board,
     toBoardLike
 } from '@/model/boards.model';
 import { pool } from '@config/databases';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
-export class board {
+export class BoardRepository {
     private readonly tableName = 'board';
 
     async findById(id: number): Promise<Board | null>{
@@ -23,7 +25,7 @@ export class board {
         }
     };
     
-    async findAll(filters: Partial<Board>): Promise<Board[]>{
+    async findAll(filters: Partial<SearchBoardDto>): Promise<Board[]>{
         try {
             const [ rows ] = await pool.query(
                 `SELECt * FROm ${this.tableName} where id = ?`
@@ -35,12 +37,13 @@ export class board {
     };
 
     // 구상 추가 필요
+    // 카테고리 추가하기 
     async create(board: Partial<Board>): Promise<Board | null>{
         try {
 
             const [ rows ] = await pool.query(
                 `insert into ${this.tableName}(member_id, title, content) values(?, ?, ?)`,
-                [ board.member_id, board.title, board?.content ?? " "]
+                [ board.member_id, board.title, board?.description ?? " "]
             )
             const id = (rows as any).insertId
             return this.findById(id)
@@ -78,26 +81,24 @@ export class board {
             throw new Error(`Failed to fetch users: ${error.message}`);
         }
     };
+    
 }
 
-export class board_category{
+export class BoardCategoryRepository{
     private readonly tableName = 'board_categoryes';
 
-    // 단일 조회
-    async findByBoardId(board_id : number) : Promise<BoardCategory | null>{
+    async findByBoardId(board_id : number) : Promise<BoardCategory[] | null>{
         try{
             const [ rows ] = await pool.query(
                 `select * from ${this.tableName} where board_id = ?`,
                 [ board_id ]
             )
-            const result = rows as any
-            return result.length ? toBoardCategoryes(result[0]) : null;
+            return (rows as any[]).map(toBoardCategoryes)
         } catch(error : any){
             throw new Error(`Failed to fetch users: ${error.message}`);
         }
     }
 
-    // 카테고리 모두 조회
     async findByCategoryId(category_id: number) : Promise<BoardCategory[]>{
         try{
             const [ rows ] = await pool.query(
@@ -109,7 +110,86 @@ export class board_category{
             throw new Error(`Failed to fetch users: ${error.message}`);
         }
     }
+
+    // 개선 코드
+    async validateCategoryIds(categoryIds: number[]): Promise<boolean[]> {
+        try {
+            // Promise.all을 사용하여 모든 비동기 작업을 병렬로 처리
+            const results = await Promise.all(
+                categoryIds.map(async (categoryId) => {
+                    try {
+                        const [rows] = await pool.query<RowDataPacket[]>(
+                            'SELECT COUNT(*) as count FROM category WHERE id = ?',
+                            [categoryId]
+                        );
+                        // rows가 배열이고 첫 번째 요소가 존재하는지 확인
+                        return Array.isArray(rows) && rows[0]?.count > 0;
+                    } catch (err) {
+                        console.error(`Error checking category ${categoryId}:`, err);
+                        return false;
+                    }
+                })
+            );
+     
+            return results;
+        } catch (error: unknown) {
+            // 에러 타입을 구체적으로 처리
+            if (error instanceof Error) {
+                throw new Error(`카테고리 검증 실패: ${error.message}`);
+            }
+            throw new Error('카테고리 검증 중 알 수 없는 오류 발생');
+        }
+    }
+
+    // 반환 타입 수정 필요
+    async create(boardId: number, categoryIds: number[]){
+        const connetion = await pool.getConnection();
+
+        try {
+            await connetion.beginTransaction();
+
+            const result = await Promise.all(
+                categoryIds.map(async (categoryId) => {
+                    try {
+                        const [rows] = await connetion.query<ResultSetHeader>(
+                            `insert into ${this.tableName} values(?, ?)`,
+                            [boardId, categoryId]
+                        );
+                        return {
+                            categoryId,
+                            success : rows.affectedRows > 0,
+                            error : rows.affectedRows > 0 ? "등록 실패" : undefined
+                        };
+                    } catch (err : any) {
+                        console.error(`Error checking category ${categoryId}:`, err);
+                        return {
+                            categoryId,
+                            success : false,
+                            error : err.message ?? "알수없는 에러"
+                        };
+                    }
+                })
+            )
+
+            const isSuccess = result.every(current => current.success)
+            
+            if(isSuccess){
+                await connetion.commit();
+            } else {
+                await connetion.rollback();
+            }
+
+            return result;
+        } catch(error){
+            await connetion.rollback();
+            throw error;
+        } finally {
+            connetion.release();
+        }
+    }
+
 }
+
 
 export class board_likes {
     private readonly tableName = 'board_likes';

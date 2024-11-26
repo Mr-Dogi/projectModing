@@ -3,7 +3,7 @@ import { pool } from '@config/databases';
 import { Member, toMember } from '@/model/members.model';
 
 
-export class member {
+export class MemberRepository {
 
     private readonly tableName = 'member';
 
@@ -25,6 +25,19 @@ export class member {
             const [ rows ] = await pool.query(
                 `select * from ${this.tableName} WHERE email = ?`,
                 [ email ]
+            )
+            const result = rows as any[];
+            return result.length ? toMember(result[0]) : null;
+        } catch ( error: any ) {
+            throw new Error(`Failed to fetch users: ${error.message}`);
+        }
+    };
+
+    async findByNickname(nickname: string): Promise<Member | null>{
+        try {
+            const [ rows ] = await pool.query(
+                `select * from ${this.tableName} WHERE nickname = ?`,
+                [ nickname ]
             )
             const result = rows as any[];
             return result.length ? toMember(result[0]) : null;
