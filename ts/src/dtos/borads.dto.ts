@@ -12,7 +12,8 @@ import {
   IsArray,
   IsBoolean,
   IsOptional,
-  ValidateNested
+  ValidateNested,
+  IsInt
 } from 'class-validator';
 
 // 공통 Author 인터페이스
@@ -78,8 +79,8 @@ export class CreateBoardDto {
     author!: Author;
 
     @IsArray()
-    @IsString({ each: true })
-    categories!: string[];
+    @IsInt({ each: true }) // 각 항목이 숫자여야 함
+    category!: number[];
 
     @IsArray()
     @IsString({ each: true })
@@ -95,9 +96,9 @@ export class SearchBoardDto {
     @IsOptional()
     keyword?: string;
 
-    @IsString()
+    @IsInt()
     @IsOptional()
-    category?: string;
+    category?: number;
 
     @IsNumber()
     @Min(1)
@@ -191,8 +192,8 @@ export class BoardDetailResponseDto extends BaseBoardResponseDto {
 
     @Expose()
     @IsArray()
-    @IsString({ each: true })
-    categories!: string[];
+    @IsInt({ each: true })
+    category!: number[];
 
     @Expose()
     @IsBoolean()
@@ -205,7 +206,7 @@ export class UpdateBoardDto {
     @IsOptional()
     @MinLength(2)
     @MaxLength(100)
-    name?: string;
+    title?: string;
 
     @IsString()
     @IsOptional()
@@ -214,8 +215,8 @@ export class UpdateBoardDto {
 
     @IsArray()
     @IsOptional()
-    @IsString({ each: true })
-    categories?: string[];
+    @IsInt({ each: true })
+    category?: number[];
 
     @IsArray()
     @IsOptional()
