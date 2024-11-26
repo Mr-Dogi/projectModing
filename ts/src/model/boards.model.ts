@@ -39,7 +39,7 @@ export class Board extends TimeStampModel {
     title!: string;
 
     @IsString()
-    content!: string;
+    description!: string;
 
     @IsString()
     status!: BoardStatus;
@@ -57,9 +57,11 @@ export class Board extends TimeStampModel {
     comment_count!: number;
 
     // Relation fields
-    categories?: Category[];
+    category?: CategoryInfo[];
     likes?: BoardLike[];
     comments?: Comment[];
+    @IsNumber()
+    categoryId ?: number;
 
     constructor(partial: Partial<Board>) {
         super();
@@ -67,8 +69,8 @@ export class Board extends TimeStampModel {
     }
 }
 
-// 카테고리 모델
-export class Category {
+//카테고리 모델
+export class CategoryInfo {
     @IsNumber()
     id!: number;
 
@@ -86,11 +88,11 @@ export class Category {
     created_at!: Date;
 
     // Relation fields
-    parent?: Category;
-    children?: Category[];
+    parent?: CategoryInfo;
+    children?: CategoryInfo[];
     boards?: Board[];
 
-    constructor(partial: Partial<Category>) {
+    constructor(partial: Partial<CategoryInfo>) {
         Object.assign(this, partial);
     }
 }
@@ -105,7 +107,7 @@ export class BoardCategory {
 
     // Relation fields
     board?: Board;
-    category?: Category;
+    category?: CategoryInfo;
 
     constructor(partial: Partial<BoardCategory>) {
         Object.assign(this, partial);
@@ -171,7 +173,7 @@ export const toBoard = (row: any): Board => {
         id : row.id,
         member_id : row.member_id,
         title : row.title,
-        content : row.content,
+        description : row.content,
         status : row.status,
         is_public : row.is_public,
         view_count : row.view_count,
