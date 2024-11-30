@@ -1,4 +1,14 @@
-import { IsDate, IsEmail, IsString, IsEnum, IsOptional, IsNumber, MinLength, MaxLength, Matches } from 'class-validator';
+import { 
+    IsDate, 
+    IsEmail, 
+    IsString, 
+    IsEnum, 
+    IsOptional, 
+    IsNumber, 
+    MinLength, 
+    MaxLength, 
+    Matches 
+} from 'class-validator';
 import { Board, BoardLike } from '@model/boards.model';
 
 // 멤버 상태 enum

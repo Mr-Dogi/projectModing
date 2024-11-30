@@ -39,7 +39,7 @@ export class Board extends TimeStampModel {
     title!: string;
 
     @IsString()
-    description!: string;
+    cotent!: string;
 
     @IsString()
     status!: BoardStatus;
@@ -173,7 +173,7 @@ export const toBoard = (row: any): Board => {
         id : row.id,
         member_id : row.member_id,
         title : row.title,
-        description : row.content,
+        cotent : row.content,
         status : row.status,
         is_public : row.is_public,
         view_count : row.view_count,
@@ -199,3 +199,17 @@ export const toBoardLike = (row : any): BoardLike => {
     })
     return boardLike
 }
+
+export const toBoardListItemDto = (row : any) => ({
+    id : row.id,
+    name : row.title,
+    description: row.row.content,
+    author : {
+        name : row.author_name,
+        type : row.author_role 
+    },
+    viewCount : row.view_count,
+    likeCount : parseInt(row.like_count),
+    commentCount : parseInt(row.comment_count),
+    createdAt : row.created_at,
+})
