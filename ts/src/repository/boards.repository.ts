@@ -1,13 +1,21 @@
-import { SearchBoardDto } from '@/dtos/borads.dto';
-import { Board, 
+import { BoardListDataDto, BoardListItemDto, SearchBoardDto } from '@/dtos/borads.dto';
+import { 
+    Board, 
     BoardCategory, 
     BoardLike,
     toBoard, 
     toBoardCategoryes,
-    toBoardLike
+    toBoardLike,
+    toBoardListItemDto
 } from '@/model/boards.model';
 import { pool } from '@config/databases';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+
+interface BoardCategoryResult{
+    categoryId : number,
+    success : boolean,
+    error : string
+}
 
 export class BoardRepository {
     private readonly tableName = 'board';
@@ -25,27 +33,100 @@ export class BoardRepository {
         }
     };
     
-    async findAll(filters: Partial<SearchBoardDto>): Promise<Board[]>{
+    async findAll(filters: SearchBoardDto): Promise<BoardListDataDto>{
         try {
-            const [ rows ] = await pool.query(
-                `SELECt * FROm ${this.tableName} where id = ?`
-            )
-            return (rows as any[]).map(toBoard)
+
+            let query = `SELECT
+                            b.*,
+                            m.nickname as author_name
+                            m.role as author_role,
+                            COUNT(DISTINCT bl.member_id) as like_count,
+                            COUNT(DISTINCT c.id) as comment_count,
+                            GROUP_CONCAT(DISTINCT bc.category_id) as category_ids
+                        FROM ${this.tableName} b
+                        LEFT JOIN members m ON b.member_id = m.id
+                        LEFT JOIN board_likes bl ON b.id = bl.board_id
+                        LEFT JOIN comments c ON b.id = c.board_id AND c.status = 'ACTIVE'
+                        LEFT JOIN board_categories bc ON b.id = bc.board_id
+                        WHERE 1=1 `;
+                        
+            let vaule = [];
+            query += `AND b.status = 'ACTIVE'`;
+
+            if (filters.category){
+                query += `AND bc.category_id = ?`;
+                vaule.push(filters.category);
+            }
+
+            if (filters.keyword){
+                query += `AND (b.title LIKE '?' OR b.content LIKE '?')`;
+                vaule.push(`%${filters.keyword}%`,`%${filters.keyword}%`)
+            }
+
+            query += `GROUP BY b.id`;
+
+            // like count 추가 필요
+            switch(filters.sort){
+                case 'CREATED_AT_DESC':
+                    query += 'ORDER BY b.create_at DESC'
+                    break;
+                case 'CREATED_AT_ASC':
+                    query += 'ORDER BY b.create_at ASC'
+                    break;
+                case 'VIEWS_DESC':
+                    query += 'ORDER BY b.view_count DESC'
+                    break;
+                case 'LIKES_DESC':
+                    query += 'ORDER BY like_count DESC'
+                    break;
+                default:
+                    query += 'ORDER BY b.create_at DESC'
+                    break;
+            }
+            
+
+            const offset = (filters.page - 1) * filters.size;
+            query += `LIMIT ? OFFSET ?`;
+            vaule.push(filters.size, offset)
+
+            const countQuery = `SELECT COUNT(DISTINCT b.id) as total FROM
+                            ${this.tableName} b 
+                                LEFT JOIN board_categories bc ON b.id = bc.board_id
+                            WHERE 1=1
+                                AND b.status = 'ACTIVE'
+                                ${filters.keyword ? "AND (b.title LIKE ? OR b.content LIKE ?)" : ""}
+                                ${filters.category ? "AND bc.category_id = ?" : ""}`
+
+            const [ rows ] = await pool.query<RowDataPacket[]>(query, vaule);
+            const [ countRow ] = await pool.query<RowDataPacket[]>(countQuery, vaule.slice(0, 2))
+
+            const board: BoardListItemDto[] = rows.map(toBoardListItemDto)
+            const boardList: BoardListDataDto = {
+                content : board,
+                pageInfo : {
+                    currentPage: filters.page,
+                    totalPages: (countRow[0].total % filters.size),
+                    totalElements: countRow[0].total,
+                    size: filters.size
+                }
+            }
+            return boardList;
+            
         } catch ( error: any ) {
             throw new Error(`Failed to fetch users: ${error.message}`);
         }
     };
 
-    // 구상 추가 필요
-    // 카테고리 추가하기 
+    // 완료
     async create(board: Partial<Board>): Promise<Board | null>{
         try {
 
             const [ rows ] = await pool.query(
                 `insert into ${this.tableName}(member_id, title, content) values(?, ?, ?)`,
-                [ board.member_id, board.title, board?.description ?? " "]
+                [ board.member_id, board.title, board?.cotent ?? " "]
             )
             const id = (rows as any).insertId
+
             return this.findById(id)
         } catch ( error: any ) {
             throw new Error(`Failed to fetch users: ${error.message}`);
@@ -142,7 +223,7 @@ export class BoardCategoryRepository{
     }
 
     // 반환 타입 수정 필요
-    async create(boardId: number, categoryIds: number[]){
+    async create(boardId: number, categoryIds: number[]): Promise<BoardCategoryResult[]>{
         const connetion = await pool.getConnection();
 
         try {
