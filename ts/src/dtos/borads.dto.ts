@@ -1,6 +1,5 @@
 import { Transform, Type, Expose } from 'class-transformer';
-import { 
-  IsEmail, 
+import {  
   IsString, 
   IsNotEmpty, 
   MinLength, 
@@ -92,6 +91,7 @@ export class CreateBoardDto {
 
 // 게시판 검색 DTO
 export class SearchBoardDto {
+
     @IsString()
     @IsOptional()
     keyword?: string;
