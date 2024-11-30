@@ -13,7 +13,6 @@ import {
 import { BoardRepository, BoardCategoryRepository } from "@repository/boards.repository"
 import { MemberRepository } from "@repository/members.repository"
 import { HttpException } from "@exceptions/httpException"
-import * as bcrypt from 'bcrypt';
 import { Member } from "@/model/members.model";
 
 export class BoardSevice{
@@ -27,7 +26,7 @@ export class BoardSevice{
         this.boardCategoryRepository = new BoardCategoryRepository();
     }
 
-    // 완료
+    // 트랜젝션 로직 생성 필요
     public async createBoard(createBoardDto : CreateBoardDto){
         try{
             
@@ -45,11 +44,10 @@ export class BoardSevice{
                 }
             }
 
-            // 
             let newBoard : Partial<Board> = {
                 member_id : memberId,
                 title : createBoardDto.name,
-                description : createBoardDto.description,
+                cotent : createBoardDto.description,
                 is_public: createBoardDto.isPublic ?? true,
                 status: BoardStatus.ACTIVE
             };
@@ -73,14 +71,14 @@ export class BoardSevice{
         }
     }
 
-    // 게시판 목록 조회 - 보류
-    public async searchBoards(searchBoardDto : Partial<SearchBoardDto>){
-        //카테고리가 유요한지 검사
-        //let existingCategori = await this.boardCategoryRepository.findByCategoryId(searchBoardDto.category)
-
-        let findBoardList = await this.boardRepository.findAll(searchBoardDto);
+    public async searchBoards(searchBoardDto : SearchBoardDto){
         
-        return findBoardList;
+        if(searchBoardDto.category){
+            let existingCategori = await this.boardCategoryRepository.findByCategoryId(searchBoardDto.category)
+            if (!existingCategori) throw new HttpException(409, "존재하지 않는 카테고리 ID 입니다.")
+        }
+
+        return await this.boardRepository.findAll(searchBoardDto);
     }
 
     // 완료
@@ -100,22 +98,17 @@ export class BoardSevice{
 
         await this.incrementViewCount(BoardId, board.view_count);
 
-        const author = await this.memberRepository.findById(board.member_id)
+        const [ author,  category] = await Promise.all([
+            await this.memberRepository.findById(board.member_id),
+            await this.boardCategoryInfos(BoardId)
+        ])
+
         if(!author) throw new HttpException(409, "게시자를 조회할 수 없습니다.")
-
-        const category = await this.boardCategoryInfos(BoardId)
     
-        let res;
-        if(category){
-            res = this.mapToResponseDetailDto(board, author, category)
-        } else {
-            res = this.mapToResponseDetailDto(board, author)
-        }
-
-        return res;
+        return this.mapToResponseDetailDto(board, author, category || undefined);
     }
 
-    // 게시판 수정 작업 - 수정 진행 중
+    // 완료
     public async updateBoard(boardId: number, userid : number, updateBoardDto : UpdateBoardDto){
 
         let findBoard = await this.boardRepository.findById(boardId);
@@ -132,7 +125,7 @@ export class BoardSevice{
 
         const updatedBoard = await this.boardRepository.update(boardId, {
             title: updateBoardDto.title,
-            description: updateBoardDto.description,
+            cotent: updateBoardDto.description,
             is_public: updateBoardDto.isPublic,
             updated_at: new Date()
         });
@@ -141,11 +134,8 @@ export class BoardSevice{
 
         return {
             id: updatedBoard.member_id.toString(),
-            // updatedAt: updatedBoard?.updated_at.toISOString() ?? new Date().toISOString()
+            updatedAt: updatedBoard?.updated_at?.toISOString() ?? updatedBoard.created_at.toISOString()
         };
-
-
-
     }
 
     // 완료
@@ -218,7 +208,7 @@ export class BoardSevice{
         return {
             id: board.id.toString(),
             name: board.title,
-            description: board.description,
+            description: board.cotent,
             author: {
                 type: author.isAdmin() ? "ADMIN" : "USER",
                 name: author.nickname
@@ -234,13 +224,13 @@ export class BoardSevice{
         return {
             id: board.id.toString(),
             name: board.title,
-            description: board.description,
+            description: board.cotent,
             author: {
                 type: author.isAdmin() ? "ADMIN" : "USER",
                 name: author.nickname
             },
             createdAt: board.created_at.toISOString(),
-            updatedAt: board?.updated_at?.toISOString() ?? "", // 디폴트 값 필요
+            updatedAt: board?.updated_at?.toISOString() ?? board.created_at.toISOString(), // 디폴트 값 필요
             viewCount: board.view_count,
             likeCount: board.like_count,
             commentCount: board.comment_count,
@@ -258,15 +248,15 @@ export class BoardSevice{
 
     private async boardCategoryInfos(boardId : number): Promise<number[] | null>{
         const res = await this.boardCategoryRepository.findByBoardId(boardId)
-        if(res){
-            return res.map(current => current.category_id)
-        } else {
-            return null
-        }
+        if(res) return res.map(current => current.category_id)
+        return null
+        
     }
 
-    private async updateBoardCategories(boardId: number, categoryInfo: number[]){
+    // 로직 변경 고려 필요
+    private async updateBoardCategories(boardId: number, categoryInfo: number[]): Promise<boolean>{
         const res = await this.boardCategoryRepository.create(boardId, categoryInfo)
+        return res.every(current => current.success === true)
     }
     
 }
