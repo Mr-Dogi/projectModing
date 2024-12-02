@@ -112,7 +112,7 @@ export class MemberDetailDto extends BaseMemberDto {
   @Expose()
   @ValidateNested({ each: true })
   @Type(() => BoardBriefDto)
-  boardPosts!: BoardBriefDto[];
+  boardPosts?: BoardBriefDto[];
 }
 
 // 회원 상세 조회 응답 DTO

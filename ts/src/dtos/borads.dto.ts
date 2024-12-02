@@ -247,6 +247,16 @@ export class BoardDeleteResponseDto {
     message!: string;
 }
 
+export class BoardStateUpdateResponseDto {
+    @Expose()
+    id!: string;
+    @Expose()
+    isPublic!: boolean;
+    @Expose()
+    @Transform(({ value }) => value.toISOString())
+    updatedAt!: string;
+}
+
 // 최종 게시판 목록 응답 DTO
 export class BoardListResponseDto extends CommonResponseDto<BoardListDataDto> {
     @Expose()
