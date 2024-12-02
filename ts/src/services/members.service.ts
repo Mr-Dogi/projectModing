@@ -1,14 +1,17 @@
 import { Member, MemberStatus } from "@/model/members.model";
 import { MemberRepository } from "@repository/members.repository"
+import { BoardRepository } from "@repository/boards.repository"
 import { HttpException } from "@exceptions/httpException"
-import { CreateMemberDto } from "@dtos/members.dto"
+import { BoardBriefDto, CreateMemberDto, MemberDetailDto } from "@dtos/members.dto"
 import * as bcrypt from 'bcrypt';
 
 export class MemberService {
     memberRepository: MemberRepository;
+    boardRepository : BoardRepository;
 
     constructor(){
         this.memberRepository = new MemberRepository()
+        this.boardRepository = new BoardRepository();
     }
 
     // 회원가입 로직
@@ -73,7 +76,7 @@ export class MemberService {
     }
 
     // 회원 상세 조회
-    public async findUser(id : number): Promise<Member | null>{
+    public async findUser(id : number): Promise<MemberDetailDto | null>{
         try{
             let findMember = await this.memberRepository.findById(id)
 
@@ -84,9 +87,30 @@ export class MemberService {
                 throw new HttpException(410, '탈퇴한 회원입니다.');
             }
     
+            let memberBoardList: BoardBriefDto[] = [];
+            let boardList = await this.boardRepository.findByMemberId(id);
+            if(boardList){
+                memberBoardList = boardList.map((board):BoardBriefDto=>{
+                 const boardDto = {
+                    id: board.id.toString(),
+                    title: board.title,
+                    createdAt: board.created_at.toISOString()
+                 }  
+                 return  boardDto;})
+            }
+
             // 민감한 정보 제거
-            const { password, ...memberWithoutPassword } = findMember;
-            return memberWithoutPassword as Member;
+            const { password, ...memberWithoutPassword} = findMember;
+            const meber = memberWithoutPassword as Member
+            const memberDetail: MemberDetailDto = {
+                userId: meber.id.toString(),
+                email: meber.email,
+                nickname: meber.nickname,
+                createdAt: meber.created_at.toISOString(),
+                boardPosts : memberBoardList.length >= 0 ? memberBoardList : undefined,
+            }
+
+            return memberDetail;
         } catch(error){
             // 로그 유틸리티 호출문
             throw error;

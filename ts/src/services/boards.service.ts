@@ -6,8 +6,11 @@ import {
     CreateBoardDto,
     SearchBoardDto,
     UpdateBoardDto,
-    BoardListItemDto,
-    BoardDetailResponseDto
+    BoardDetailResponseDto,
+    BaseBoardResponseDto,
+    BoardListDataDto,
+    BoardUpdateResponseDto,
+    BoardStateUpdateResponseDto
  } from "@dtos/borads.dto"
  
 import { BoardRepository, BoardCategoryRepository } from "@repository/boards.repository"
@@ -27,7 +30,7 @@ export class BoardSevice{
     }
 
     // 트랜젝션 로직 생성 필요
-    public async createBoard(createBoardDto : CreateBoardDto){
+    public async createBoard(createBoardDto : CreateBoardDto):Promise<BaseBoardResponseDto | null>{
         try{
             
             // 사용자 검증
@@ -65,77 +68,104 @@ export class BoardSevice{
                 );
             }
 
-            return this.mapToResponseDto(createdBoard, author);
+            return this.mapToResponseCreateDto(createdBoard, author);
         }catch(error){
             throw error;
         }
     }
 
-    public async searchBoards(searchBoardDto : SearchBoardDto){
-        
-        if(searchBoardDto.category){
-            let existingCategori = await this.boardCategoryRepository.findByCategoryId(searchBoardDto.category)
-            if (!existingCategori) throw new HttpException(409, "존재하지 않는 카테고리 ID 입니다.")
-        }
+    public async searchBoards(searchBoardDto : SearchBoardDto):Promise<BoardListDataDto | null>{
+        try{
+            if(searchBoardDto.category){
+                let existingCategori = await this.boardCategoryRepository.findByCategoryId(searchBoardDto.category)
+                if (!existingCategori) throw new HttpException(409, "존재하지 않는 카테고리 ID 입니다.")
+            }
 
-        return await this.boardRepository.findAll(searchBoardDto);
-    }
+            const board = await this.boardRepository.findAll(searchBoardDto);
+            const countRow = await this.boardRepository.findAllBoardCount(searchBoardDto);
 
-    // 완료
-    public async getBoardDetail(BoardId : number, userId: number): Promise<BoardDetailResponseDto>{
-        const board = await this.boardRepository.findById(BoardId);
-        if (!board) {
-            throw new HttpException(404, "존재하지 않는 게시글입니다.");
-        }
-
-        if (board.status === BoardStatus.DELETED) {
-            throw new HttpException(410, "삭제된 게시글입니다.");
-        }
-
-        if (!board.is_public && board.member_id !== userId) {
-            throw new HttpException(403, "접근 권한이 없습니다.");
-        }
-
-        await this.incrementViewCount(BoardId, board.view_count);
-
-        const [ author,  category] = await Promise.all([
-            await this.memberRepository.findById(board.member_id),
-            await this.boardCategoryInfos(BoardId)
-        ])
-
-        if(!author) throw new HttpException(409, "게시자를 조회할 수 없습니다.")
+            const boardList: BoardListDataDto = {
+                content : board,
+                pageInfo : {
+                    currentPage: searchBoardDto.page,
+                    totalPages: (countRow % searchBoardDto.size),
+                    totalElements: countRow,
+                    size: searchBoardDto.size
+                }
+            }
     
-        return this.mapToResponseDetailDto(board, author, category || undefined);
+            return boardList
+        }catch(error){
+            throw error;
+        }
+        
     }
 
     // 완료
-    public async updateBoard(boardId: number, userid : number, updateBoardDto : UpdateBoardDto){
-
-        let findBoard = await this.boardRepository.findById(boardId);
-        if (!findBoard) throw new HttpException(409, "유요하지 않은 게시판 입니다.");
-
-        if (!this.canEdit(findBoard, userid)) {
-            throw new HttpException(403, "수정 권한이 없습니다.");
+    public async getBoardDetail(BoardId : number, userId: number): Promise<BoardDetailResponseDto | null>{
+        try{
+            const board = await this.boardRepository.findById(BoardId);
+            if (!board) {
+                throw new HttpException(404, "존재하지 않는 게시글입니다.");
+            }
+    
+            if (board.status === BoardStatus.DELETED) {
+                throw new HttpException(410, "삭제된 게시글입니다.");
+            }
+    
+            if (!board.is_public && board.member_id !== userId) {
+                throw new HttpException(403, "접근 권한이 없습니다.");
+            }
+    
+            await this.incrementViewCount(BoardId, board.view_count);
+    
+            const [ author,  category] = await Promise.all([
+                await this.memberRepository.findById(board.member_id),
+                await this.boardCategoryInfos(BoardId)
+            ])
+    
+            if(!author) throw new HttpException(409, "게시자를 조회할 수 없습니다.")
+        
+            return this.mapToResponseDetailDto(board, author, category || undefined);
+        }catch(error){
+            throw error
         }
+        
+    }
 
-        //카테고리 업데이트
-        if (updateBoardDto.category) {
-            await this.updateBoardCategories(boardId, updateBoardDto.category);
+    // 완료
+    public async updateBoard(boardId: number, userid : number, updateBoardDto : UpdateBoardDto): Promise<BoardUpdateResponseDto | null>{
+        try{
+            let findBoard = await this.boardRepository.findById(boardId);
+            if (!findBoard) throw new HttpException(409, "유요하지 않은 게시판 입니다.");
+    
+            if (!this.canEdit(findBoard, userid)) {
+                throw new HttpException(403, "수정 권한이 없습니다.");
+            }
+    
+            //카테고리 업데이트
+            if (updateBoardDto.category) {
+                await this.updateBoardCategories(boardId, updateBoardDto.category);
+            }
+    
+            const updatedBoard = await this.boardRepository.update(boardId, {
+                title: updateBoardDto.title,
+                cotent: updateBoardDto.description,
+                is_public: updateBoardDto.isPublic,
+                updated_at: new Date()
+            });
+    
+            if(!updatedBoard) throw new HttpException(409, "수정에 실패하였습니다");
+    
+            const updateResponse: BoardUpdateResponseDto = {
+                id: updatedBoard.member_id.toString(),
+                updatedAt: updatedBoard?.updated_at?.toISOString() ?? updatedBoard.created_at.toISOString()
+            };
+
+            return updateResponse;
+        }catch(error){
+            throw error;
         }
-
-        const updatedBoard = await this.boardRepository.update(boardId, {
-            title: updateBoardDto.title,
-            cotent: updateBoardDto.description,
-            is_public: updateBoardDto.isPublic,
-            updated_at: new Date()
-        });
-
-        if(!updatedBoard) throw new HttpException(409, "수정에 실패하였습니다");
-
-        return {
-            id: updatedBoard.member_id.toString(),
-            updatedAt: updatedBoard?.updated_at?.toISOString() ?? updatedBoard.created_at.toISOString()
-        };
     }
 
     // 완료
@@ -159,22 +189,37 @@ export class BoardSevice{
     }
 
     // 완료
-    public async togglePublicState(boardId : number, userId: number): Promise<boolean>{
-        let findBoard = await this.boardRepository.findById(boardId);
-        if (!findBoard) throw new HttpException(409, "유요하지 않은 게시판 입니다.");
+    public async togglePublicState(boardId : number, userId: number): Promise<BoardStateUpdateResponseDto | null>{
+        try {
+            let oldBoard = await this.boardRepository.findById(boardId);
+            if (!oldBoard) throw new HttpException(409, "유요하지 않은 게시판 입니다.");
+    
+            if (!this.canEdit(oldBoard, userId)) {
+                throw new HttpException(403, "권한이 없습니다.");
+            }
+    
+            let success  = await this.boardRepository.update(boardId, {
+                is_public : !oldBoard.is_public,
+                updated_at: new Date()
+            });
+    
+            if (!success) throw new HttpException(409, "공개 여부 변경에 실패하였습니다.");
+    
+            const newBoard = await this.boardRepository.findById(boardId);
+            if (!newBoard) throw new HttpException(409, "유요하지 않은 게시판 입니다.");
+            if (oldBoard.is_public != newBoard.is_public) throw new HttpException(409, "상태 업데이트에 실패하였습니다..");
 
-        if (!this.canEdit(findBoard, userId)) {
-            throw new HttpException(403, "권한이 없습니다.");
+            const BoardStateUpdateResponse:BoardStateUpdateResponseDto = {
+                id : newBoard.id.toString(),
+                isPublic : newBoard.is_public,
+                updatedAt : newBoard?.updated_at?.toISOString() ?? newBoard.created_at.toISOString() 
+            }
+    
+            return BoardStateUpdateResponse;
+        }catch(error) {
+            throw error
         }
-
-        let success  = await this.boardRepository.update(boardId, {
-            is_public : !findBoard.is_public,
-            updated_at: new Date()
-        });
-
-        if (!success) throw new HttpException(409, "공개 여부 변경에 실패하였습니다.");
-
-        return true;
+        
     }
 
     // 유틸리트 함수
@@ -187,24 +232,7 @@ export class BoardSevice{
         return board.member_id === userId && board.status === BoardStatus.ACTIVE;
     }
 
-    private buildSearchFilters(searchDto: SearchBoardDto): Partial<Board> {
-        const filters: Partial<Board> = {
-            status: BoardStatus.ACTIVE
-        };
-
-        if (searchDto.keyword) {
-            filters.title = searchDto.keyword;
-        }
-
-        //boardModel 카테고리 파라미터 수정 필요
-        if (searchDto.category) {
-            filters.categoryId = searchDto.category;
-        }
-
-        return filters;
-    }
-
-    private mapToResponseDto(board: Board, author: Member): BoardListItemDto {
+    private mapToResponseCreateDto(board: Board, author: Member): BaseBoardResponseDto {
         return {
             id: board.id.toString(),
             name: board.title,
@@ -213,10 +241,7 @@ export class BoardSevice{
                 type: author.isAdmin() ? "ADMIN" : "USER",
                 name: author.nickname
             },
-            createdAt: board.created_at.toISOString(),
-            viewCount: board.view_count,
-            likeCount: board.like_count,
-            commentCount: board.comment_count
+            createdAt: board.created_at.toISOString()
         };
     }
 
