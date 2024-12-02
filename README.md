@@ -47,6 +47,21 @@ yarn run dev
 ```
 
 ## 프로젝트 구조
+레이아웃 아키텍쳐에 따라 구성하였습니다.
+부가적인 레이아웃도 추가로 구성 
+DTO, MODEL(DB 스키마), middlewares (공통 로직) 등...
+1. Presentation Layer
+   controller
+   - 클라이언트의 요청 변환
+   - 기본적인 내용을 검증한다.
+2. Business Layer
+   services
+   - 비즈니스 로직을 정의한다.
+3. Persistence Layer
+   repository (DAO)
+   - DB와 상호작용하는 역할 수행
+4. Database Layer
+   실제 DB가 존재하는 계층
 ```
 src/
 ├── config/     # 환경 변수 정의
