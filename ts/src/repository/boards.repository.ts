@@ -32,8 +32,21 @@ export class BoardRepository {
             throw new Error(`Failed to fetch users: ${error.message}`);
         }
     };
+
+    async findByMemberId(memberId : number): Promise<Board[] | null>{
+        try {
+            const [ rows ] = await pool.query(
+                `select * from ${this.tableName} where member_id = ?`,
+                [ memberId ]
+            )
+            const result = rows as any[]
+            return result.length ? result.map(toBoard) : null;
+        } catch ( error: any ) {
+            throw new Error(`Failed to fetch users: ${error.message}`);
+        }
+    }
     
-    async findAll(filters: SearchBoardDto): Promise<BoardListDataDto>{
+    async findAll(filters: SearchBoardDto): Promise<BoardListItemDto[]>{
         try {
 
             let query = `SELECT
@@ -89,6 +102,26 @@ export class BoardRepository {
             query += `LIMIT ? OFFSET ?`;
             vaule.push(filters.size, offset)
 
+
+
+            const [ rows ] = await pool.query<RowDataPacket[]>(query, vaule);
+            
+            const board: BoardListItemDto[] = rows.map(toBoardListItemDto)
+            
+            return board;
+            
+        } catch ( error: any ) {
+            throw new Error(`Failed to fetch users: ${error.message}`);
+        }
+    };
+
+    async findAllBoardCount(filters: SearchBoardDto): Promise<number>{
+        try {
+
+            let vaule = [];
+            if (filters.category) vaule.push(filters.category);
+            if (filters.keyword) vaule.push(`%${filters.keyword}%`,`%${filters.keyword}%`)
+
             const countQuery = `SELECT COUNT(DISTINCT b.id) as total FROM
                             ${this.tableName} b 
                                 LEFT JOIN board_categories bc ON b.id = bc.board_id
@@ -97,25 +130,12 @@ export class BoardRepository {
                                 ${filters.keyword ? "AND (b.title LIKE ? OR b.content LIKE ?)" : ""}
                                 ${filters.category ? "AND bc.category_id = ?" : ""}`
 
-            const [ rows ] = await pool.query<RowDataPacket[]>(query, vaule);
             const [ countRow ] = await pool.query<RowDataPacket[]>(countQuery, vaule.slice(0, 2))
-
-            const board: BoardListItemDto[] = rows.map(toBoardListItemDto)
-            const boardList: BoardListDataDto = {
-                content : board,
-                pageInfo : {
-                    currentPage: filters.page,
-                    totalPages: (countRow[0].total % filters.size),
-                    totalElements: countRow[0].total,
-                    size: filters.size
-                }
-            }
-            return boardList;
-            
-        } catch ( error: any ) {
-            throw new Error(`Failed to fetch users: ${error.message}`);
+            return countRow[0].total
+        } catch (error){
+            throw error;
         }
-    };
+    }
 
     // 완료
     async create(board: Partial<Board>): Promise<Board | null>{
