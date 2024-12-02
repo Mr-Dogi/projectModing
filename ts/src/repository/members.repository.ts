@@ -1,4 +1,3 @@
-import { Repository } from '@interfaces/repository.interface'
 import { pool } from '@config/databases';
 import { Member, toMember } from '@/model/members.model';
 
