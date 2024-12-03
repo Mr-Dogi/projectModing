@@ -52,13 +52,16 @@ export class CommonResponseDto<T> {
 
     @Expose()
     @Type(() => Object)
-    data!: T;
+    data?: T;
 
     @Expose()
-    timestamp!: string;
+    message?: string;
 
-    @Expose()
-    statusCode!: number;
+    // @Expose()
+    // timestamp!: string;
+
+    // @Expose()
+    // statusCode!: number;
 }
 
 // 게시판 생성 DTO
