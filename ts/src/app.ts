@@ -1,7 +1,8 @@
-import express, { Request, Response } from 'express';
- 
-const app = express();
-const port = 3000;
+import express from 'express';
+import { logger, stream } from '@utile/logger';
+import { ErrorMiddleware } from '@middlewares/error.middleware'
+import { LOG_FORMAT } from '@/config';
+import morgan from 'morgan';
  
 export class App{
   public app : express.Application;
@@ -11,7 +12,7 @@ export class App{
   // any 타입은 추후 사용자 지정 라우터를 받도록 선언 예정
   constructor(routes : any[]){
     this.app = express();
-    this.port = 3000
+    this.port = 7001
     this.env = 'development'
 
     this.initializeMiddlewares();
@@ -20,9 +21,20 @@ export class App{
     
   }
 
+  public listen() {
+    this.app.listen(this.port, () => {
+      logger.info(`=================================`);
+      logger.info(`======= ENV: ${this.env} =======`);
+      logger.info(`🚀 App listening on the port ${this.port}`);
+      logger.info(`=================================`);
+    });
+  }
+
   // 중간 목적의 함수
   private initializeMiddlewares(){
-    this.app.use()
+    this.app.use(morgan("dev", { stream }));
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: true }));
   }
 
   // 
@@ -32,7 +44,9 @@ export class App{
     });
   }
 
-  private initializeErrorHandling(){
-    this.app.use();
+  private initializeErrorHandling() {
+    this.app.use(ErrorMiddleware);
   }
+
+  
 }
