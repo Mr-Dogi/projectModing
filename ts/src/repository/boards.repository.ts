@@ -18,7 +18,7 @@ interface BoardCategoryResult{
 }
 
 export class BoardRepository {
-    private readonly tableName = 'board';
+    private readonly tableName = 'boards';
 
     async findById(id: number): Promise<Board | null>{
         try {

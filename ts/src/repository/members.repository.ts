@@ -4,7 +4,7 @@ import { Member, toMember } from '@/model/members.model';
 
 export class MemberRepository {
 
-    private readonly tableName = 'member';
+    private readonly tableName = 'members';
 
     async findById(id: number): Promise<Member | null>{
         try {
@@ -48,7 +48,7 @@ export class MemberRepository {
     async create(member: Partial<Member>): Promise<Member | null>{
         try {
             const [ rows ] = await pool.query(
-                `insert into member(email, nickname, password ) values(?, ?, ?)`,
+                `insert into ${this.tableName}(email, nickname, password ) values(?, ?, ?)`,
                 [ member.email, member.nickname, member.password]
             )
             const id = (rows as any).insertId;
@@ -66,7 +66,7 @@ export class MemberRepository {
             const values = [...Object.values(member), id];
 
             const [ rows ] = await pool.query(
-                `update member set ${fields} where id = ?`,
+                `update ${this.tableName} set ${fields} where id = ?`,
                 values
             )
             return this.findById(id);
@@ -79,7 +79,7 @@ export class MemberRepository {
     async delete(id: number): Promise<boolean>{
         try {
             const [ result ] = await pool.query(
-                `delete from member where id = ?`,
+                `delete from ${this.tableName} where id = ?`,
                 [ id ]
             )
             return (result as any).affectedRows > 0;

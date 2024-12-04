@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { Routes } from '@interfaces/route.interface';
-import { memberController } from '@/controller/members.controller';
+import { memberController } from '@controller/members.controller';
 
 export class Member implements Routes {
     path = '/members'
-    router = Router();
+    routes = Router();
     member = new memberController();
 
     constructor() {
@@ -13,9 +13,9 @@ export class Member implements Routes {
 
     // 컨트롤러 등록
     initializeRoutes(): void {
-        this.router.post(`${this.path}`, this.member.createUser);
-        this.router.get(`${this.path}/:id(\\d+)`, this.member.findUser);
-        this.router.delete(`${this.path}/:id(\\d+)`, this.member.deleteUser);
+        this.routes.post(`${this.path}`, this.member.createUser);
+        this.routes.get(`${this.path}/:id(\\d+)`, this.member.findUser);
+        this.routes.delete(`${this.path}/:id(\\d+)`, this.member.deleteUser);
     }
     
 }
