@@ -17,6 +17,7 @@ import { BoardRepository, BoardCategoryRepository } from "@repository/boards.rep
 import { MemberRepository } from "@repository/members.repository"
 import { HttpException } from "@exceptions/httpException"
 import { Member } from "@/model/members.model";
+import dayjs from "dayjs";
 
 export class BoardSevice{
     boardRepository : BoardRepository;
@@ -152,14 +153,14 @@ export class BoardSevice{
                 title: updateBoardDto.title,
                 cotent: updateBoardDto.description,
                 is_public: updateBoardDto.isPublic,
-                updated_at: new Date()
+                updated_at: dayjs().toDate()
             });
     
             if(!updatedBoard) throw new HttpException(409, "수정에 실패하였습니다");
     
             const updateResponse: BoardUpdateResponseDto = {
                 id: updatedBoard.member_id.toString(),
-                updatedAt: updatedBoard?.updated_at?.toISOString() ?? updatedBoard.created_at.toISOString()
+                updatedAt: dayjs(updatedBoard?.updated_at).format('YYYY-MM-DD HH:mm:ss') ?? dayjs(updatedBoard.created_at).format('YYYY-MM-DD HH:mm:ss')
             };
 
             return updateResponse;
@@ -180,7 +181,7 @@ export class BoardSevice{
 
         let success = await this.boardRepository.update(boardId, {
             status : BoardStatus.DELETED,
-            deleted_at : new Date()
+            deleted_at : dayjs().toDate()
         });
 
         if (!success) throw new HttpException(409, "게시판 삭제에 실패하였습니다.");
@@ -200,7 +201,7 @@ export class BoardSevice{
     
             let success  = await this.boardRepository.update(boardId, {
                 is_public : !oldBoard.is_public,
-                updated_at: new Date()
+                updated_at: dayjs().toDate()
             });
     
             if (!success) throw new HttpException(409, "공개 여부 변경에 실패하였습니다.");
@@ -212,7 +213,7 @@ export class BoardSevice{
             const BoardStateUpdateResponse:BoardStateUpdateResponseDto = {
                 id : newBoard.id.toString(),
                 isPublic : newBoard.is_public,
-                updatedAt : newBoard?.updated_at?.toISOString() ?? newBoard.created_at.toISOString() 
+                updatedAt : dayjs(newBoard?.updated_at)?.format('YYYY-MM-DD HH:mm:ss') ?? dayjs(newBoard.created_at).format('YYYY-MM-DD HH:mm:ss')
             }
     
             return BoardStateUpdateResponse;
@@ -241,7 +242,7 @@ export class BoardSevice{
                 type: author.isAdmin() ? "ADMIN" : "USER",
                 name: author.nickname
             },
-            createdAt: board.created_at.toISOString()
+            createdAt: dayjs(board.created_at).format('YYYY-MM-DD HH:mm:ss')
         };
     }
 
@@ -255,7 +256,7 @@ export class BoardSevice{
                 name: author.nickname
             },
             createdAt: board.created_at.toISOString(),
-            updatedAt: board?.updated_at?.toISOString() ?? board.created_at.toISOString(), // 디폴트 값 필요
+            updatedAt: dayjs(board?.updated_at)?.format('YYYY-MM-DD HH:mm:ss') ?? dayjs(board.created_at).format('YYYY-MM-DD HH:mm:ss'), // 디폴트 값 필요
             viewCount: board.view_count,
             likeCount: board.like_count,
             commentCount: board.comment_count,

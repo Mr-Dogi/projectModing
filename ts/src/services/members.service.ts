@@ -4,6 +4,7 @@ import { BoardRepository } from "@repository/boards.repository"
 import { HttpException } from "@exceptions/httpException"
 import { BoardBriefDto, CreateMemberDto, MemberDetailDto } from "@dtos/members.dto"
 import * as bcrypt from 'bcrypt';
+import dayjs from "dayjs";
 
 export class MemberService {
     memberRepository: MemberRepository;
@@ -60,7 +61,7 @@ export class MemberService {
             // Soft Delete 처리
             const deleteResult = await this.memberRepository.update(userId, {
                 status: MemberStatus.DELETED,
-                deleted_at: new Date()
+                deleted_at: dayjs().toDate()
             });
 
             if (!deleteResult) {
@@ -78,6 +79,7 @@ export class MemberService {
     // 회원 상세 조회
     public async findUser(id : number): Promise<MemberDetailDto | null>{
         try{
+
             let findMember = await this.memberRepository.findById(id)
 
             if (!findMember) throw new HttpException(409, "User doesn't exist") ;
@@ -89,14 +91,16 @@ export class MemberService {
     
             let memberBoardList: BoardBriefDto[] = [];
             let boardList = await this.boardRepository.findByMemberId(id);
+
             if(boardList){
                 memberBoardList = boardList.map((board):BoardBriefDto=>{
                  const boardDto = {
                     id: board.id.toString(),
                     title: board.title,
-                    createdAt: board.created_at.toISOString()
+                    createdAt: dayjs(board.created_at).format('YYYY-MM-DD HH:mm:ss'),
                  }  
-                 return  boardDto;})
+                 return  boardDto;
+                })
             }
 
             // 민감한 정보 제거
@@ -106,7 +110,7 @@ export class MemberService {
                 userId: meber.id.toString(),
                 email: meber.email,
                 nickname: meber.nickname,
-                createdAt: meber.created_at.toISOString(),
+                createdAt: dayjs(meber.created_at).format('YYYY-MM-DD HH:mm:ss'),
                 boardPosts : memberBoardList.length >= 0 ? memberBoardList : undefined,
             }
 
@@ -133,7 +137,7 @@ export class MemberService {
     
             const updatedMember = await this.memberRepository.update(userId, {
                 ...updateMember,
-                updated_at: new Date()
+                updated_at: dayjs().toDate()
             });
     
             if (!updatedMember) {
@@ -158,15 +162,13 @@ export class MemberService {
             if (!isPasswordValid) throw new HttpException(401, '비밀번호가 일치하지 않습니다');
             
             const updatedMember = await this.memberRepository.update(member.id,{
-                last_login_at : new Date()
+                last_login_at : dayjs().toDate()
             })
 
             if(!updatedMember) throw new HttpException(401, '로그인 정보 갱신에 실패하였습니다');
             
             const { password, ...memberWithoutPassword } = updatedMember;
             return memberWithoutPassword as Member
-
-            // 패스워드 검사
         } catch(error){
             // 로그 유틸리티 호출문
             throw error;
