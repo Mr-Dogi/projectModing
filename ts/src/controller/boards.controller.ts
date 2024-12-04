@@ -28,6 +28,7 @@ export class boardController {
 
     public searchBoard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
+            
             const filter: SearchBoardDto = req.body;
             const boardList: BoardListDataDto | null = await this.boardService.searchBoards(filter);
             if(!boardList) throw new HttpException(409, "생성에 실패하였습니다.");

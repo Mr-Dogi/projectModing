@@ -15,7 +15,7 @@ export class memberController {
         try {
             const newUser: CreateMemberDto = req.body;
             const member: Member | null = await this.memberService.createUser(newUser);
-            if(!member) throw new HttpException(401, "생성에 실패하였습니다.")
+            if(!member) throw new HttpException(409, "생성에 실패하였습니다.")
 
             const result:CommonResponseDto<Member> = {
                 success: true,
@@ -33,7 +33,7 @@ export class memberController {
             // 파라미터 숫자 값인지 검사 필요
             const memberId = req.params.id;
             const deleteUser = await this.memberService.deleteUser(Number(memberId))
-            if(!deleteUser) throw new HttpException(401, "삭제에 실패하였습니다.")
+            if(!deleteUser) throw new HttpException(409, "삭제에 실패하였습니다.")
 
             const result:CommonResponseDto<null> = {
                 success: true,
@@ -51,7 +51,7 @@ export class memberController {
             // 파라미터 숫자 값인지 검사 필요
             const memberId = req.params.id;
             const member = await this.memberService.findUser(Number(memberId))
-            if(!member) throw new HttpException(401, "조회된 유저가 없습니다..")
+            if(!member) throw new HttpException(404, "조회된 유저가 없습니다.")
 
             const result:CommonResponseDto<MemberDetailDto> = {
                 success: true,

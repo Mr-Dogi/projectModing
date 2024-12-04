@@ -20,7 +20,7 @@ export class MemberService {
         try{
             // 이메일 중복 유효성 검사
             let result = await this.memberRepository.findByEmail(member.email)
-            if (result) throw new HttpException(409, "User doesn't exist");
+            if (result) throw new HttpException(409, "이미 존재하는 이메일입니다.");
 
             // 닉네임 중복 유효성 검사
             let existingNickname = await this.memberRepository.findByNickname(member.nickname)
@@ -36,7 +36,7 @@ export class MemberService {
             }
             // 맴버 생성
             let createMember = await this.memberRepository.create(newMember)
-            if (!createMember) throw new HttpException(500, '회원 생성에 실패했습니다.');
+            if (!createMember) throw new HttpException(409, '회원 생성에 실패했습니다.');
 
             // 민감한 정보 제거 후 반환
             const { password, ...memberWithoutPassword } = createMember;
@@ -65,7 +65,7 @@ export class MemberService {
             });
 
             if (!deleteResult) {
-                throw new HttpException(500, '회원 탈퇴 처리에 실패했습니다.');
+                throw new HttpException(409, '회원 탈퇴 처리에 실패했습니다.');
             }
 
             return true;
@@ -81,12 +81,10 @@ export class MemberService {
         try{
 
             let findMember = await this.memberRepository.findById(id)
-
-            if (!findMember) throw new HttpException(409, "User doesn't exist") ;
+            if (!findMember) throw new HttpException(404, '존재하지 않는 회원입니다.');
     
-            // 삭제된 회원 체크
             if (findMember.status === 'DELETED') {
-                throw new HttpException(410, '탈퇴한 회원입니다.');
+                throw new HttpException(403, '탈퇴한 회원입니다.');
             }
     
             let memberBoardList: BoardBriefDto[] = [];
@@ -127,12 +125,12 @@ export class MemberService {
         try {
             if(updateMember.email){
                 let result = await this.memberRepository.findByEmail(updateMember.email)
-                if (result) throw new HttpException(409, "User doesn't exist");
+                if (result) throw new HttpException(409, '수정 불가한 이메일입니다.');
             }
             
             if (updateMember.nickname){
                 let existingNickname = await this.memberRepository.findByNickname(updateMember.nickname)
-                if (existingNickname) throw new HttpException(409, "User doesn't exist");
+                if (existingNickname) throw new HttpException(409, '수정 불가한 닉네임입니다.');
             }
     
             const updatedMember = await this.memberRepository.update(userId, {
@@ -141,7 +139,7 @@ export class MemberService {
             });
     
             if (!updatedMember) {
-                throw new HttpException(500, '회원 정보 수정에 실패했습니다.');
+                throw new HttpException(409, '회원 정보 수정에 실패했습니다.');
             }
     
             const { password, ...memberWithoutPassword } = updatedMember;
@@ -156,16 +154,16 @@ export class MemberService {
     public async login(email : string, updatePassword : string): Promise<Member | null>{
         try {
             const member = await this.memberRepository.findByEmail(email)
-            if (!member) throw new HttpException(401, '이메일이 일치하지 않습니다.');
+            if (!member) throw new HttpException(403, '이메일이 일치하지 않습니다.');
 
             const isPasswordValid = await bcrypt.compare(updatePassword, member.password);
-            if (!isPasswordValid) throw new HttpException(401, '비밀번호가 일치하지 않습니다');
+            if (!isPasswordValid) throw new HttpException(403, '비밀번호가 일치하지 않습니다');
             
             const updatedMember = await this.memberRepository.update(member.id,{
                 last_login_at : dayjs().toDate()
             })
 
-            if(!updatedMember) throw new HttpException(401, '로그인 정보 갱신에 실패하였습니다');
+            if(!updatedMember) throw new HttpException(409, '로그인 정보 갱신에 실패하였습니다');
             
             const { password, ...memberWithoutPassword } = updatedMember;
             return memberWithoutPassword as Member
