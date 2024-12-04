@@ -38,11 +38,6 @@ export class CommonResponseDto<T> {
 
   @Expose()
   message?: string;
-  // @Expose()
-  // timestamp!: string;
-
-  // @Expose()
-  // statusCode!: number;
 }
 
 // 회원 생성 요청 DTO
@@ -103,8 +98,6 @@ export class MemberResponseDto extends CommonResponseDto<BaseMemberDto> {
         nickname: member.nickname,
         createdAt: member.created_at.toISOString()
       },
-      // timestamp: new Date().toISOString(),
-      // statusCode: 200
     };
   }
 }
@@ -138,8 +131,6 @@ export class MemberDetailResponseDto extends CommonResponseDto<MemberDetailDto> 
           createdAt: board.created_at.toISOString()
         }))
       },
-      // timestamp: new Date().toISOString(),
-      // statusCode: 200
     };
   }
 }

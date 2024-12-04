@@ -23,7 +23,7 @@ export class Author {
   
     @IsString()
     @IsNotEmpty()
-    name!: string;
+    nickname!: string;
   }
   
 // PageInfo를 class로 변경
@@ -70,7 +70,7 @@ export class CreateBoardDto {
     @IsNotEmpty()
     @MinLength(2)
     @MaxLength(100)
-    name!: string;
+    title!: string;
 
     @IsString()
     @MaxLength(5000)
@@ -125,7 +125,7 @@ export class BaseBoardResponseDto {
     id!: string;
 
     @Expose()
-    name!: string;
+    title!: string;
 
     @Expose()
     description!: string;
