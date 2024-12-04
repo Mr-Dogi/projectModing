@@ -9,6 +9,7 @@ import {
     toBoardListItemDto
 } from '@/model/boards.model';
 import { pool } from '@config/databases';
+import { flushCompileCache } from 'module';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 interface BoardCategoryResult{
@@ -51,7 +52,7 @@ export class BoardRepository {
 
             let query = `SELECT
                             b.*,
-                            m.nickname as author_name
+                            m.nickname as author_name,
                             m.role as author_role,
                             COUNT(DISTINCT bl.member_id) as like_count,
                             COUNT(DISTINCT c.id) as comment_count,
@@ -64,42 +65,42 @@ export class BoardRepository {
                         WHERE 1=1 `;
                         
             let vaule = [];
-            query += `AND b.status = 'ACTIVE'`;
+            query += ` AND b.status = 'ACTIVE'`;
 
             if (filters.category){
-                query += `AND bc.category_id = ?`;
+                query += ` AND bc.category_id = ?`;
                 vaule.push(filters.category);
             }
 
             if (filters.keyword){
-                query += `AND (b.title LIKE '?' OR b.content LIKE '?')`;
+                query += ` AND (b.title LIKE ? OR b.content LIKE ?)`;
                 vaule.push(`%${filters.keyword}%`,`%${filters.keyword}%`)
             }
 
-            query += `GROUP BY b.id`;
+            query += ` GROUP BY b.id`;
 
             // like count 추가 필요
             switch(filters.sort){
                 case 'CREATED_AT_DESC':
-                    query += 'ORDER BY b.create_at DESC'
+                    query += ' ORDER BY b.created_at DESC'
                     break;
                 case 'CREATED_AT_ASC':
-                    query += 'ORDER BY b.create_at ASC'
+                    query += ' ORDER BY b.created_at ASC'
                     break;
                 case 'VIEWS_DESC':
-                    query += 'ORDER BY b.view_count DESC'
+                    query += ' ORDER BY b.view_count DESC'
                     break;
                 case 'LIKES_DESC':
-                    query += 'ORDER BY like_count DESC'
+                    query += ' ORDER BY like_count DESC'
                     break;
                 default:
-                    query += 'ORDER BY b.create_at DESC'
+                    query += ' ORDER BY b.created_at DESC'
                     break;
             }
             
 
             const offset = (filters.page - 1) * filters.size;
-            query += `LIMIT ? OFFSET ?`;
+            query += ` LIMIT ? OFFSET ?`;
             vaule.push(filters.size, offset)
 
 
@@ -119,8 +120,9 @@ export class BoardRepository {
         try {
 
             let vaule = [];
-            if (filters.category) vaule.push(filters.category);
             if (filters.keyword) vaule.push(`%${filters.keyword}%`,`%${filters.keyword}%`)
+            if (filters.category) vaule.push(filters.category);
+            
 
             const countQuery = `SELECT COUNT(DISTINCT b.id) as total FROM
                             ${this.tableName} b 
@@ -130,7 +132,7 @@ export class BoardRepository {
                                 ${filters.keyword ? "AND (b.title LIKE ? OR b.content LIKE ?)" : ""}
                                 ${filters.category ? "AND bc.category_id = ?" : ""}`
 
-            const [ countRow ] = await pool.query<RowDataPacket[]>(countQuery, vaule.slice(0, 2))
+            const [ countRow ] = await pool.query<RowDataPacket[]>(countQuery, vaule)
             return countRow[0].total
         } catch (error){
             throw error;
@@ -186,7 +188,7 @@ export class BoardRepository {
 }
 
 export class BoardCategoryRepository{
-    private readonly tableName = 'board_categoryes';
+    private readonly tableName = 'board_categories';
 
     async findByBoardId(board_id : number) : Promise<BoardCategory[] | null>{
         try{
@@ -212,7 +214,6 @@ export class BoardCategoryRepository{
         }
     }
 
-    // 개선 코드
     async validateCategoryIds(categoryIds: number[]): Promise<boolean[]> {
         try {
             // Promise.all을 사용하여 모든 비동기 작업을 병렬로 처리
@@ -220,7 +221,7 @@ export class BoardCategoryRepository{
                 categoryIds.map(async (categoryId) => {
                     try {
                         const [rows] = await pool.query<RowDataPacket[]>(
-                            'SELECT COUNT(*) as count FROM category WHERE id = ?',
+                            'SELECT COUNT(*) as count FROM categories WHERE id = ?',
                             [categoryId]
                         );
                         // rows가 배열이고 첫 번째 요소가 존재하는지 확인
@@ -292,7 +293,7 @@ export class BoardCategoryRepository{
 }
 
 
-export class board_likes {
+export class Board_likes {
     private readonly tableName = 'board_likes';
 
     async findByBoardId(board_id : number) : Promise<BoardLike[]>{
@@ -314,6 +315,19 @@ export class board_likes {
                 [ user_id ]
             )
             return (rows as any[]).map(toBoardLike)
+        } catch (error : any){
+            throw new Error(`Failed to fetch users: ${error.message}`);
+        }
+    }
+
+    async create(boardId: number, memberId: number): Promise<Boolean>{
+        try {
+            const [ rows ] = await pool.query(
+                `inset into ${this.tableName}(board_id, member_id) values(?, ?) `,
+                [ boardId, memberId ]
+            )
+
+            return (rows as any).affectedRows > 0;
         } catch (error : any){
             throw new Error(`Failed to fetch users: ${error.message}`);
         }
