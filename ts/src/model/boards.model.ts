@@ -178,7 +178,10 @@ export const toBoard = (row: any): Board => {
         is_public : row.is_public,
         view_count : row.view_count,
         like_count : row.like_count,
-        comment_count : row.comment_count
+        comment_count : row.comment_count,
+        created_at : row.created_at,
+        updated_at : row?.updated_at ?? row.created_at,
+        deleted_at : row?.deleted_at ?? null
     })
     return board
 }
