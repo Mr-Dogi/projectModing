@@ -1,5 +1,6 @@
 import { IsDate, IsNumber, IsString, IsBoolean, IsOptional } from 'class-validator';
 import { Member } from '@model/members.model';
+import { BoardListItemDto } from '@/dtos/borads.dto';
 
 // 공통 타임스탬프 베이스 모델
 export abstract class TimeStampModel {
@@ -203,12 +204,12 @@ export const toBoardLike = (row : any): BoardLike => {
     return boardLike
 }
 
-export const toBoardListItemDto = (row : any) => ({
+export const toBoardListItemDto = (row : any): BoardListItemDto => ({
     id : row.id,
-    name : row.title,
-    description: row.row.content,
+    title : row.title,
+    description: row.content,
     author : {
-        name : row.author_name,
+        nickname : row.author_name,
         type : row.author_role 
     },
     viewCount : row.view_count,
