@@ -63,6 +63,18 @@ export class CreateMemberDto {
   password!: string;
 }
 
+export class LoginMemberInfo {
+  @IsEmail()
+  @MaxLength(100)
+  email!: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(20)
+  password!: string;
+
+}
+
 // 기본 회원 정보 DTO
 export class BaseMemberDto {
   @Expose()
