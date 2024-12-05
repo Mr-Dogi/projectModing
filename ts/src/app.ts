@@ -1,6 +1,6 @@
 import express from 'express';
 import { logger, stream } from '@utile/logger';
-import { ErrorMiddleware } from '@middlewares/error.middleware'
+import { ErrorMiddleware, RateLimit } from '@middlewares/error.middleware'
 import { LOG_FORMAT } from '@/config';
 import morgan from 'morgan';
  
@@ -35,6 +35,7 @@ export class App{
     this.app.use(morgan("dev", { stream }));
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(RateLimit)
   }
 
   // 
