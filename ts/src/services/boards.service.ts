@@ -36,7 +36,7 @@ export class BoardSevice{
         try{
             
             let author  = await this.memberRepository.findByNickname(createBoardDto.author.nickname);
-            if(!author) throw new HttpException(403, "유요하지 않은 사용자 입니다.");
+            if(!author) throw new HttpException(401, "유효하지 않은 사용자입니다");
 
             let memberId = author.id;
 
@@ -77,7 +77,7 @@ export class BoardSevice{
         try{
             if(searchBoardDto.category){
                 let existingCategori = await this.boardCategoryRepository.findByCategoryId(searchBoardDto.category)
-                if (!existingCategori) throw new HttpException(403, "존재하지 않는 카테고리 ID 입니다.")
+                if (!existingCategori) throw new HttpException(404, "존재하지 않는 카테고리입니다.")
             }
 
             const board = await this.boardRepository.findAll(searchBoardDto);
@@ -104,7 +104,7 @@ export class BoardSevice{
     public async getBoardDetail(BoardId : number, userId: number): Promise<BoardDetailResponseDto | null>{
         try{
             const board = await this.boardRepository.findById(BoardId);
-            if (!board) throw new HttpException(403, "존재하지 않는 게시글입니다.");
+            if (!board) throw new HttpException(404, "존재하지 않는 게시글입니다");
             if (board.status === BoardStatus.DELETED) throw new HttpException(403, "삭제된 게시글입니다.");
             if (!board.is_public && !this.userAtivateChack(userId)) throw new HttpException(403, "접근 권한이 없습니다.");
     
@@ -115,7 +115,7 @@ export class BoardSevice{
                 await this.boardCategoryInfos(BoardId)
             ])
     
-            if(!author) throw new HttpException(403, "게시자를 조회할 수 없습니다.")
+            if(!author) throw new HttpException(404, "존재하지 않는 게시글입니다")
         
             return this.mapToResponseDetailDto(board, author, category || undefined);
         }catch(error){
@@ -127,7 +127,7 @@ export class BoardSevice{
     public async updateBoard(boardId: number, userid : number, updateBoardDto : UpdateBoardDto): Promise<BoardUpdateResponseDto | null>{
         try{
             let findBoard = await this.boardRepository.findById(boardId);
-            if (!findBoard) throw new HttpException(403, "유요하지 않은 게시판 입니다.");
+            if (!findBoard) throw new HttpException(404, "존재하지 않는 게시글입니다");
     
             if (!this.canEdit(findBoard, userid)) {
                 throw new HttpException(403, "수정 권한이 없습니다.");
@@ -160,7 +160,7 @@ export class BoardSevice{
     public async boardDelete(boardId : number, userId: number): Promise<boolean>{
         try{
             let findBoard = await this.boardRepository.findById(boardId);
-            if (!findBoard) throw new HttpException(403, "유요하지 않은 게시판 입니다.");
+            if (!findBoard) throw new HttpException(404, "존재하지 않는 게시글입니다");
     
             if (!this.canEdit(findBoard, userId)) {
                 throw new HttpException(403, "삭제 권한이 없습니다.");
@@ -183,7 +183,7 @@ export class BoardSevice{
     public async togglePublicState(boardId : number, userId: number): Promise<BoardStateUpdateResponseDto | null>{
         try {
             let oldBoard = await this.boardRepository.findById(boardId);
-            if (!oldBoard) throw new HttpException(403, "유요하지 않은 게시판 입니다.");
+            if (!oldBoard) throw new HttpException(404, "존재하지 않는 게시글입니다");
     
             if (!this.canEdit(oldBoard, userId)) {
                 throw new HttpException(403, "권한이 없습니다.");
@@ -197,7 +197,7 @@ export class BoardSevice{
             if (!success) throw new HttpException(409, "공개 여부 변경에 실패하였습니다.");
     
             const newBoard = await this.boardRepository.findById(boardId);
-            if (!newBoard) throw new HttpException(403, "유요하지 않은 게시판 입니다.");
+            if (!newBoard) throw new HttpException(404, "존재하지 않는 게시글입니다");
             if (oldBoard.is_public != newBoard.is_public) throw new HttpException(409, "상태 업데이트에 실패하였습니다.");
 
             const BoardStateUpdateResponse:BoardStateUpdateResponseDto = {
@@ -216,9 +216,9 @@ export class BoardSevice{
     public async likeIncrementBoard(boardId: number, memberId: number): Promise<boolean>{
         try {
             let Board = await this.boardRepository.findById(boardId);
-            if (!Board) throw new HttpException(403, "유요하지 않은 게시판입니다.");
+            if (!Board) throw new HttpException(404, "존재하지 않는 게시글입니다");
             let member = await this.memberRepository.findById(memberId);
-            if (!member) throw new HttpException(403, "조회할 수 없는 사용자입니다.");
+            if (!member) throw new HttpException(404, "사용자를 찾을 수 없습니다");
     
             await this.incrementLikeCount(boardId, Board.like_count)
             const result = this.board_likes.create(boardId, memberId);

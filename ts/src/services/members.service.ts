@@ -2,7 +2,7 @@ import { Member, MemberStatus } from "@/model/members.model";
 import { MemberRepository } from "@repository/members.repository"
 import { BoardRepository } from "@repository/boards.repository"
 import { HttpException } from "@exceptions/httpException"
-import { BoardBriefDto, CreateMemberDto, MemberDetailDto } from "@dtos/members.dto"
+import { BoardBriefDto, CreateMemberDto, LoginMemberInfo, MemberDetailDto } from "@dtos/members.dto"
 import * as bcrypt from 'bcrypt';
 import dayjs from "dayjs";
 
@@ -55,7 +55,7 @@ export class MemberService {
             // 회원 존재 여부 확인
             const existingMember = await this.memberRepository.findById(userId);
             if (!existingMember) {
-                throw new HttpException(404, '존재하지 않는 회원입니다.');
+                throw new HttpException(404, '존재하지 않는 회원입니다');
             }
 
             // Soft Delete 처리
@@ -121,16 +121,16 @@ export class MemberService {
     }
 
     // 회원 가입 로직
-    public async updateUser(userId : number, updateMember : Partial<Member>) : Promise<Member | null>{
+    public async updateUser(userId : number, updateMember : CreateMemberDto) : Promise<Member | null>{
         try {
             if(updateMember.email){
                 let result = await this.memberRepository.findByEmail(updateMember.email)
-                if (result) throw new HttpException(409, '수정 불가한 이메일입니다.');
+                if (result) throw new HttpException(409, "이미 사용 중인 이메일입니다");
             }
             
             if (updateMember.nickname){
                 let existingNickname = await this.memberRepository.findByNickname(updateMember.nickname)
-                if (existingNickname) throw new HttpException(409, '수정 불가한 닉네임입니다.');
+                if (existingNickname) throw new HttpException(409, "이미 사용 중인 닉네임입니다");
             }
     
             const updatedMember = await this.memberRepository.update(userId, {
@@ -151,13 +151,13 @@ export class MemberService {
     }
 
     // 로그인 로직
-    public async login(email : string, updatePassword : string): Promise<Member | null>{
+    public async login(loginMemberInfo: LoginMemberInfo): Promise<Member | null>{
         try {
-            const member = await this.memberRepository.findByEmail(email)
-            if (!member) throw new HttpException(403, '이메일이 일치하지 않습니다.');
+            const member = await this.memberRepository.findByEmail(loginMemberInfo.email)
+            if (!member) throw new HttpException(401, "이메일 또는 비밀번호가 일치하지 않습니다");
 
-            const isPasswordValid = await bcrypt.compare(updatePassword, member.password);
-            if (!isPasswordValid) throw new HttpException(403, '비밀번호가 일치하지 않습니다');
+            const isPasswordValid = await bcrypt.compare(loginMemberInfo.password, member.password);
+            if (!isPasswordValid) throw new HttpException(401, "이메일 또는 비밀번호가 일치하지 않습니다");
             
             const updatedMember = await this.memberRepository.update(member.id,{
                 last_login_at : dayjs().toDate()
