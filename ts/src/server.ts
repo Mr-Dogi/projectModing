@@ -1,8 +1,11 @@
+import "reflect-metadata";
 import { App } from './app';
 import { Member } from '@router/members.router';
-import { Board } from '@router/boards.router';
-import 'reflect-metadata';
+import { Board } from '@router/boards.router';``
+import { ContainerConfig, diContainer } from "@config/containerConfig";
 
-const app = new App([new Member(), new Board()]);
+ContainerConfig.configure();
 
+const app = new App([diContainer.resolve(Member), diContainer.resolve(Board)]);
 app.listen();
+

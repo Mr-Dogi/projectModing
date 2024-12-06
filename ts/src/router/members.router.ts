@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { Routes } from '@interfaces/route.interface';
 import { memberController } from '@controller/members.controller';
+import { inject, injectable } from 'tsyringe';
 
+@injectable()
 export class Member implements Routes {
     path = '/members'
     routes = Router();
-    member = new memberController();
 
-    constructor() {
+    constructor(@inject(memberController) private member: memberController) {
         this.initializeRoutes();
     }
 

@@ -10,6 +10,7 @@ import {
 } from '@/model/boards.model';
 import { pool } from '@config/databases';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { injectable } from 'tsyringe';
 
 interface BoardCategoryResult{
     categoryId : number,
@@ -17,6 +18,7 @@ interface BoardCategoryResult{
     error : string
 }
 
+@injectable()
 export class BoardRepository {
     private readonly tableName = 'boards';
 
@@ -186,6 +188,7 @@ export class BoardRepository {
     
 }
 
+@injectable()
 export class BoardCategoryRepository{
     private readonly tableName = 'board_categories';
 
@@ -291,7 +294,7 @@ export class BoardCategoryRepository{
 
 }
 
-
+@injectable()
 export class Board_likes {
     private readonly tableName = 'board_likes';
 

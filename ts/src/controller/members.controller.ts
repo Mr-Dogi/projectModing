@@ -3,13 +3,12 @@ import { HttpException } from '@/exceptions/httpException';
 import { Member } from '@/model/members.model';
 import { MemberService } from '@/services/members.service';
 import { NextFunction, Request, Response } from 'express';
+import { inject, injectable } from 'tsyringe';
 
+@injectable()
 export class memberController {
-    memberService: MemberService;
 
-    constructor(){
-        this.memberService = new MemberService();
-    }
+    constructor(@inject(MemberService) private memberService: MemberService){}
 
     public createUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {

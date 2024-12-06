@@ -3,14 +3,14 @@ import { Routes } from '@interfaces/route.interface';
 import { boardController } from '@/controller/boards.controller';
 import { ValidationMiddleware } from '@middlewares/validation.middleware';
 import { CreateBoardDto, SearchBoardDto, UpdateBoardDto } from '@/dtos/borads.dto';
+import { inject, injectable } from 'tsyringe';
 
-
+@injectable()
 export class Board implements Routes {
     path = '/boards'
     routes = Router();
-    board = new boardController();
 
-    constructor() {
+    constructor(@inject(boardController) private board: boardController) {
         this.initializeRoutes();
       }
 

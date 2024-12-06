@@ -1,7 +1,8 @@
 import { pool } from '@config/databases';
 import { Member, toMember } from '@/model/members.model';
+import { injectable } from 'tsyringe';
 
-
+@injectable()
 export class MemberRepository {
 
     private readonly tableName = 'members';
@@ -105,7 +106,6 @@ export class MemberRepository {
 }
 
 // 유저 id를 통한 검색도 필요로 생각됨
-
 
 // 추후 계획
 // commnet 답변 테이블 dao 추가하기

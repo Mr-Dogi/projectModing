@@ -2,13 +2,12 @@ import { BaseBoardResponseDto, BoardDetailResponseDto, BoardListDataDto, BoardSt
 import { HttpException } from '@/exceptions/httpException';
 import { BoardSevice } from '@/services/boards.service';
 import { NextFunction, Request, Response } from 'express';
+import { inject, injectable } from 'tsyringe';
 
+@injectable()
 export class boardController {
-    boardService: BoardSevice;
 
-    constructor(){
-        this.boardService = new BoardSevice();
-    }
+    constructor(@inject(BoardSevice) private boardService: BoardSevice){}
 
     public createBoard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {

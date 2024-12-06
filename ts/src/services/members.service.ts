@@ -5,15 +5,13 @@ import { HttpException } from "@exceptions/httpException"
 import { BoardBriefDto, CreateMemberDto, LoginMemberInfo, MemberDetailDto } from "@dtos/members.dto"
 import * as bcrypt from 'bcrypt';
 import dayjs from "dayjs";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class MemberService {
-    memberRepository: MemberRepository;
-    boardRepository : BoardRepository;
 
-    constructor(){
-        this.memberRepository = new MemberRepository()
-        this.boardRepository = new BoardRepository();
-    }
+    constructor(@inject(MemberRepository) private memberRepository: MemberRepository,
+                @inject(BoardRepository) private boardRepository: BoardRepository){}
 
     // 회원가입 로직
     public async createUser(member : CreateMemberDto): Promise<Member | null>{

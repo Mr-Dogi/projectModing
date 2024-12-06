@@ -18,20 +18,15 @@ import { MemberRepository } from "@repository/members.repository"
 import { HttpException } from "@exceptions/httpException"
 import { Member } from "@/model/members.model";
 import dayjs from "dayjs";
+import { inject, injectable } from "tsyringe";
 
-
+@injectable()
 export class BoardSevice{
-    boardRepository : BoardRepository;
-    memberRepository : MemberRepository;
-    boardCategoryRepository : BoardCategoryRepository;
-    board_likes : Board_likes;
 
-    constructor(){
-        this.boardRepository = new BoardRepository();
-        this.memberRepository = new MemberRepository();
-        this.boardCategoryRepository = new BoardCategoryRepository();
-        this.board_likes = new Board_likes();
-    }
+    constructor(@inject(MemberRepository) private memberRepository: MemberRepository,
+                @inject(BoardRepository) private boardRepository: BoardRepository,
+                @inject(BoardCategoryRepository) private boardCategoryRepository: BoardCategoryRepository,
+                @inject(Board_likes) private board_likes:Board_likes){}
 
     public async createBoard(createBoardDto : CreateBoardDto):Promise<BaseBoardResponseDto | null>{
         try{

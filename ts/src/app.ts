@@ -1,8 +1,12 @@
+import "reflect-metadata";
 import express from 'express';
 import { logger, stream } from '@utile/logger';
 import { ErrorMiddleware, RateLimit } from '@middlewares/error.middleware'
-import { LOG_FORMAT } from '@/config';
+import { PORT } from '@config/index';
 import morgan from 'morgan';
+import { container } from "tsyringe";
+import { BoardSevice } from '@services/boards.service';
+import { BoardRepository } from "@repository/boards.repository";
  
 export class App{
   public app : express.Application;
@@ -12,13 +16,12 @@ export class App{
   // any 타입은 추후 사용자 지정 라우터를 받도록 선언 예정
   constructor(routes : any[]){
     this.app = express();
-    this.port = 7001
+    this.port = PORT || 7001
     this.env = 'development'
 
     this.initializeMiddlewares();
     this.initializeRoutes(routes);
     this.initializeErrorHandling();
-    
   }
 
   public listen() {
@@ -48,6 +51,4 @@ export class App{
   private initializeErrorHandling() {
     this.app.use(ErrorMiddleware);
   }
-
-  
 }
