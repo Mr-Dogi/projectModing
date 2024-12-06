@@ -9,7 +9,7 @@ export class Member implements Routes {
 
     constructor() {
         this.initializeRoutes();
-      }
+    }
 
     // 컨트롤러 등록
     initializeRoutes(): void {

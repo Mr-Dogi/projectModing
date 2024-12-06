@@ -19,6 +19,7 @@ import { HttpException } from "@exceptions/httpException"
 import { Member } from "@/model/members.model";
 import dayjs from "dayjs";
 
+
 export class BoardSevice{
     boardRepository : BoardRepository;
     memberRepository : MemberRepository;

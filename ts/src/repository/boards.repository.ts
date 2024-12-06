@@ -1,4 +1,4 @@
-import { BoardListDataDto, BoardListItemDto, SearchBoardDto } from '@/dtos/borads.dto';
+import {  BoardListItemDto, SearchBoardDto } from '@/dtos/borads.dto';
 import { 
     Board, 
     BoardCategory, 
@@ -9,7 +9,6 @@ import {
     toBoardListItemDto
 } from '@/model/boards.model';
 import { pool } from '@config/databases';
-import { flushCompileCache } from 'module';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 interface BoardCategoryResult{

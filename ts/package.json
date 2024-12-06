@@ -6,7 +6,7 @@
   "scripts": {
     "start": "ts-node -r reflect-metadata/Reflect -r tsconfig-paths/register src/server.ts",
     "build": "tsc",
-    "dev": "ts-node -r reflect-metadata/Reflect -r tsconfig-paths/register src/server.ts",
+    "dev": "cross-env NODE_ENV=development nodemon",
     "test": "ts-mocha src/test/*.spec.ts"
   },
   "keywords": [],
@@ -15,11 +15,14 @@
   "devDependencies": {
     "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.0",
+    "@types/express-rate-limit": "^6.0.2",
     "@types/mocha": "^10.0.9",
     "@types/morgan": "^1.9.9",
     "@types/mysql": "^2.15.26",
     "@types/node": "^22.10.1",
+    "cross-env": "^7.0.3",
     "mocha": "^10.8.2",
+    "nodemon": "^3.1.7",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
@@ -35,6 +38,7 @@
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
     "morgan": "^1.10.0",
     "mysql": "^2.18.1",
     "mysql2": "^3.11.4",
