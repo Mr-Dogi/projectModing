@@ -7,17 +7,18 @@
 
 ## 기술 스택
 * 언어: typescript
-* Backend: Node.js express
+* Backend: Node.js, express
 * Databases: Mysql
-* 기타 :
+* DI : tsyringe
+* 클라우드 : google Cloud VM , google Sql
 
 ## 시작하기
 ### 개발 환경
 ```
 Node.js 22.11
 npm 10.9
+yarn 
 fnm 1.38.1
-yarn or npm
 mysql 5.7 for google cloud sql
 ```
 
