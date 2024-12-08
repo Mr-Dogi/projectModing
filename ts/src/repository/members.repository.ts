@@ -91,11 +91,33 @@ export class MemberRepository {
         
     };
 
-    //filters 인자값 활용 방안 구상
-    async findAll(filters: Partial<Member>): Promise<Member[]>{
+    async select(filters: Partial<Member>): Promise<Member[]>{
         try {
+
+            const conditions: string[] = [];
+            const values: any[] = [];
+
+            Object.entries(filters).forEach(([key, value]) => {
+                switch(key) {
+                    case 'email':
+                    case 'nickname':
+                        conditions.push(`${key} LIKE ?`);
+                        values.push(`%${value}%`);
+                        break;
+                    
+                    case 'id':
+                        conditions.push(`${key} = ?`);
+                        values.push(value);
+                        break;
+                }
+            });
+
+            const whereClause = conditions.length 
+            ? ` WHERE ${conditions.join(' AND ')}` 
+            : '';
+
             const [ rows ] = await pool.query(
-                `SELECt * FROM ${this.tableName}`
+                `SELECt * FROM ${this.tableName} ${whereClause} `
             );
             return (rows as any[]).map(toMember)
         } catch ( error: any ) {
