@@ -90,5 +90,6 @@ yarn run test
 
 ## 기타 문서
 [데이터베이스 문서](./DATABASE.md)
+[API 사양서](./spec.md)
 
 ### 참고 자료
